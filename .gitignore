@@ -162,8 +162,7 @@ cython_debug/
 .idea/
 .venv/
 
-# Ignore everything in mydir
+# Ignore everything in data
 data/*
-
 # Except the .keep file
 !data/.keep
