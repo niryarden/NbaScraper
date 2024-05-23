@@ -1,4 +1,5 @@
 import json
+import os
 import urllib.request
 from bs4 import BeautifulSoup
 
@@ -10,12 +11,23 @@ def convert_clock(raw):
     return raw
 
 
-def main():
-    URL = "https://www.nba.com/game/mia-vs-bos-0042300105/play-by-play?period=All"
-    oururl = urllib.request.urlopen(URL).read()
-    soup = BeautifulSoup(oururl, "html.parser")
+def create_dir(game_id):
+    if not os.path.exists(f"data/{game_id}"):
+        os.makedirs(f"data/{game_id}")
+
+
+def scrape_play_by_play(game_id):
+    url = f"https://www.nba.com/game/{game_id}/play-by-play?period=All"
+    response = urllib.request.urlopen(url).read()
+    soup = BeautifulSoup(response, "html.parser")
     data = json.loads(soup.find('script', type='application/json', id="__NEXT_DATA__").text)
     actions = data["props"]["pageProps"]["playByPlay"]["actions"]
+    play_by_play = parse_play_by_play(actions)
+    with open(f'data/{game_id}/play_by_play.json', 'w+') as f:
+        json.dump(play_by_play, f)
+
+
+def parse_play_by_play(actions):
     play_by_play = []
     score = "0:0"
     for action in actions:
@@ -28,10 +40,38 @@ def main():
             score = f"{action['scoreHome']}:{action['scoreAway']}"
         play["score"] = score
         play_by_play.append(play)
+    return play_by_play
 
-    with open('data/game_play_by_play.json', 'w+') as f:
-        json.dump(play_by_play, f)
+
+def parse_recap(recap_as_list):
+    recap = "\n".join(recap_as_list)
+    if " (AP) " in recap:
+        _, _, recap = recap.partition(" (AP) ")
+    if "\n--\n" in recap:
+        recap, _, _ = recap.partition("\n--\n")
+    if "\n---\n" in recap:
+        recap, _, _ = recap.partition("\n---\n")
+    recap = recap.strip()
+    recap = recap.replace("  ", " ")
+    return recap
+
+
+def scrape_recap(game_id):
+    url = f"https://www.nba.com/game/{game_id}"
+    response = urllib.request.urlopen(url).read()
+    soup = BeautifulSoup(response, "html.parser")
+    data = json.loads(soup.find('script', type='application/json', id="__NEXT_DATA__").text)
+    recap_as_list = data["props"]["pageProps"]["story"]["content"]
+    recap = parse_recap(recap_as_list)
+    with open(f'data/{game_id}/recap.txt', 'w+') as f:
+        f.write(recap)
+
+
+def main(game_id):
+    create_dir(game_id)
+    scrape_play_by_play(game_id)
+    scrape_recap(game_id)
 
 
 if __name__ == '__main__':
-    main()
+    main("mia-vs-bos-0042300105")
