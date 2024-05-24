@@ -10,9 +10,9 @@ def parse_game_urls(games):
     game_urls = []
     for game in games:
         card_data = game["cardData"]
-        if card_data["seasonType"] != "Playoffs":
+        if card_data["seasonType"] == "Regular Season":
             game_urls.append(game["cardData"]["shareUrl"].split("/")[-1])
-        else:
+        if card_data["seasonType"] == "Playoffs":
             print("Playoffs, stopping")
             return game_urls, True
     return game_urls, False
@@ -31,12 +31,6 @@ def scrape_games_by_day(day):
     return parse_game_urls(game_cards_list)
 
 
-def write_games(game_urls):
-    with open(f'data/game_urls.txt', 'w+') as f:
-        for game in game_urls:
-            f.write(f"{game}\n")
-
-
 def generate_dates_for_year(year):
     start_date = datetime(year, 10, 1)
     end_date = datetime(year + 1, 6, 1)
@@ -51,9 +45,8 @@ def generate_dates_for_year(year):
     return all_days
 
 
-def main():
+def scrape_games_ids_by_year(year):
     game_urls = []
-    year = 2023  # TODO: change to run on multiple years
     days_of_year = generate_dates_for_year(year)
     should_stop = False
 
@@ -73,8 +66,4 @@ def main():
         if should_stop:
             break
 
-    write_games(game_urls)
-
-
-if __name__ == '__main__':
-    main()
+    return game_urls
