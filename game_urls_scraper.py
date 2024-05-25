@@ -52,16 +52,22 @@ def scrape_games_ids_by_year(year):
 
     for day in days_of_year:
         print(f"fetching games for {day=}")
-        for i in range(REQ_RETRIES):
+        done = False
+        i = 0
+        while not done and i < REQ_RETRIES:
             try:
                 game_urls_for_day, should_stop = scrape_games_by_day(day)
                 game_urls.extend(game_urls_for_day)
+                done = True
                 print("Done")
-                break
             except Exception as e:
                 print(f"caught error {e}, retrying...")
+                i += 1
 
+        if i == REQ_RETRIES:
             print(f"failed fetching games for {day=}, moving on...")
+            with open("data/unsuccessful_days.txt", 'a') as f:
+                f.write(day)
 
         if should_stop:
             break
