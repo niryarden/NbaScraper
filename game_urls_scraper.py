@@ -32,7 +32,7 @@ def scrape_games_by_day(day):
 
 
 def generate_dates_for_year(year):
-    start_date = datetime(year, 10, 1)
+    start_date = datetime(year, 10, 15)
     end_date = datetime(year + 1, 6, 1)
 
     all_days = []
@@ -73,3 +73,18 @@ def scrape_games_ids_by_year(year):
             break
 
     return game_urls
+
+
+def write_game_ids(game_ids, year):
+    with open(f'data/game_ids/{year}.txt', 'w') as f:
+        f.write("\n".join(game_ids))
+
+
+def main():
+    for year in range(2019, 2024):
+        game_ids = scrape_games_ids_by_year(year)
+        write_game_ids(game_ids, year)
+
+
+if __name__ == '__main__':
+    main()

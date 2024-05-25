@@ -162,7 +162,7 @@ cython_debug/
 .idea/
 .venv/
 
-# Ignore everything in data
-data/*
-# Except the .keep file
-!data/.keep
+data/game_ids/*
+!data/game_ids/.keep
+data/dataset/*
+!data/dataset/.keep
