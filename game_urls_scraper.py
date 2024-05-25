@@ -2,8 +2,10 @@ import json
 import urllib.request
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
+import threading
 
-REQ_RETRIES = 3
+
+REQ_RETRIES = 5
 
 
 def parse_game_urls(games):
@@ -68,22 +70,25 @@ def scrape_games_ids_by_year(year):
             print(f"failed fetching games for {day=}, moving on...")
             with open("data/unsuccessful_days.txt", 'a') as f:
                 f.write(day)
+                f.flush()
 
         if should_stop:
             break
 
-    return game_urls
-
-
-def write_game_ids(game_ids, year):
     with open(f'data/game_ids/{year}.txt', 'w') as f:
-        f.write("\n".join(game_ids))
+        f.write("\n".join(game_urls))
+        f.flush()
 
 
 def main():
-    for year in range(2019, 2024):
-        game_ids = scrape_games_ids_by_year(year)
-        write_game_ids(game_ids, year)
+    for base_year in range(1996, 2019, 4):
+        threads = []
+        for year in [base_year, base_year+1, base_year+2, base_year+3]:
+            thread = threading.Thread(target=scrape_games_ids_by_year, args=(year,))
+            threads.append(thread)
+            thread.start()
+        for thread in threads:
+            thread.join()
 
 
 if __name__ == '__main__':

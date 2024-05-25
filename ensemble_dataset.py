@@ -125,7 +125,7 @@ def scrape_year(year, get_recaps):
 
 def main():
     threads = []
-    for year in range(2020, 2024):
+    for year in range(2019, 2024):
         thread = threading.Thread(target=scrape_year, args=(year, True,))
         threads.append(thread)
         thread.start()

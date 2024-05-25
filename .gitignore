@@ -162,7 +162,11 @@ cython_debug/
 .idea/
 .venv/
 
+data/**
+!data/game_ids
+!data/dataset
 data/game_ids/*
 !data/game_ids/.keep
 data/dataset/*
 !data/dataset/.keep
+
