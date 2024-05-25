@@ -1,12 +1,13 @@
 import json
 import urllib.request
 from bs4 import BeautifulSoup
+import threading
 
 
 REQ_RETRIES = 3
 
 
-def get_response(game_id):
+def get_response(game_id, year):
     print(f"fetching {game_id=}")
     url = f"https://www.nba.com/game/{game_id}"
     for i in range(REQ_RETRIES):
@@ -18,8 +19,9 @@ def get_response(game_id):
             print(f"caught error {e}, retrying...")
 
     print(f"failed fetching {game_id=}, moving on...")
-    with open("data/unsuccessful_game_ids.txt", 'a') as f:
-        f.write(game_id)
+    with open(f"data/dataset/{year}/unsuccessful_game_ids.txt", 'a') as f:
+        f.write(game_id + "\n")
+        f.flush()
     return None, False
 
 
@@ -69,8 +71,8 @@ def parse_metadata(data):
     return metadata
 
 
-def scrape_game(game_id):
-    response, is_success = get_response(game_id)
+def scrape_game(game_id, year):
+    response, is_success = get_response(game_id, year)
     if not is_success:
         return
     soup = BeautifulSoup(response, "html.parser")
@@ -85,15 +87,35 @@ def scrape_game(game_id):
         "input": play_by_play,
         "output": recap
     }
-    with open(f"data/dataset/supervised.jsonl", "a") as f:
+    with open(f"data/dataset/{year}/{year}_samples.jsonl", "a") as f:
         f.write(json.dumps(game) + "\n")
+        f.flush()
+
+
+def scrape_unsuccessful_games(year):
+    with open(f"data/dataset/{year}/unsuccessful_game_ids.txt", 'r') as f:
+        game_ids = f.read().splitlines()
+    with open(f"data/dataset/{year}/unsuccessful_game_ids.txt", 'w') as f:
+        pass
+    for game_id in game_ids:
+        scrape_game(game_id, year)
+
+
+def scrape_year(year):
+    with open(f"data/game_ids/{year}.txt") as f:
+        game_ids = f.read().splitlines()
+    for game_id in game_ids:
+        scrape_game(game_id, year)
 
 
 def main():
-    for year in range(2019, 2024):
-        with open(f"data/game_ids/{year}.txt") as f:
-            for game_id in f.read().splitlines():
-                scrape_game(game_id)
+    threads = []
+    for year in range(2020, 2024):
+        thread = threading.Thread(target=scrape_year, args=(year,))
+        threads.append(thread)
+        thread.start()
+    for thread in threads:
+        thread.join()
 
 
 if __name__ == '__main__':
