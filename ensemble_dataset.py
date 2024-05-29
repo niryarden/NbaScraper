@@ -5,7 +5,7 @@ import threading
 import os
 
 
-REQ_RETRIES = 3
+REQ_RETRIES = 5
 
 
 def create_dir(path):
@@ -45,7 +45,7 @@ def parse_play_by_play(actions):
         period = action["period"]
         clock = convert_clock(action["clock"])
         event = action["description"]
-        if action["scoreHome"]:
+        if int(action["scoreHome"]) or int(action["scoreAway"]):
             score = f"{action['scoreHome']}:{action['scoreAway']}"
         play_as_text = f"Period: {period}, Clock: {clock}, Score: {score}, Event: {event}"
         play_by_play.append(play_as_text)
@@ -123,10 +123,11 @@ def scrape_year(year, get_recaps):
                 should_stop = True
 
 
-def main():
+def main(get_recaps=True):
     threads = []
-    for year in range(2019, 2024):
-        thread = threading.Thread(target=scrape_year, args=(year, True,))
+    # for year in range(1996, 2019):
+    for year in range(1996, 1997):
+        thread = threading.Thread(target=scrape_year, args=(year, get_recaps,))
         threads.append(thread)
         thread.start()
     for thread in threads:
@@ -134,4 +135,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(False)
