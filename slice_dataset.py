@@ -11,7 +11,7 @@ def split_supervised():
     n = len(all_samples)
     train = all_samples[:int(0.8 * n)]
     test = all_samples[int(0.8 * n):int(0.9 * n)]
-    dev = all_samples[int(0.9 * n):]
+    validation = all_samples[int(0.9 * n):]
 
     with open(f"data/dataset/to_upload/uncompressed/train.jsonl", "w") as f:
         f.write("\n".join(train))
@@ -23,10 +23,10 @@ def split_supervised():
     with zipfile.ZipFile("data/dataset/to_upload/compressed/test.zip", "w", zipfile.ZIP_DEFLATED) as zipf:
         zipf.write("data/dataset/to_upload/uncompressed/test.jsonl")
 
-    with open(f"data/dataset/to_upload/uncompressed/dev.jsonl", "w") as f:
-        f.write("\n".join(dev))
-    with zipfile.ZipFile("data/dataset/to_upload/compressed/dev.zip", "w", zipfile.ZIP_DEFLATED) as zipf:
-        zipf.write("data/dataset/to_upload/uncompressed/dev.jsonl")
+    with open(f"data/dataset/to_upload/uncompressed/validation.jsonl", "w") as f:
+        f.write("\n".join(validation))
+    with zipfile.ZipFile("data/dataset/to_upload/compressed/validation.zip", "w", zipfile.ZIP_DEFLATED) as zipf:
+        zipf.write("data/dataset/to_upload/uncompressed/validation.jsonl")
 
 
 def gather_unsupervised():
@@ -43,5 +43,5 @@ def gather_unsupervised():
 
 
 if __name__ == "__main__":
-    # split_supervised()
+    split_supervised()
     gather_unsupervised()
