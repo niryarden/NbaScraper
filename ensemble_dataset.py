@@ -84,17 +84,31 @@ def scrape_game(game_id, year, get_recaps):
         return
     soup = BeautifulSoup(response, "html.parser")
     data = json.loads(soup.find('script', type='application/json', id="__NEXT_DATA__").text)
-    actions = data["props"]["pageProps"]["playByPlay"]["actions"]
+    page_props = data["props"]["pageProps"]
+    actions = page_props["playByPlay"]["actions"]
+    home_team_players = page_props["game"]["homeTeamPlayers"]
+    home_team_player_names = ",".join([player['name'] for player in home_team_players])
+    home_team_names_I = ",".join([player['nameI'] for player in home_team_players])
+
+    away_team_players = page_props["game"]["awayTeamPlayers"]
+    away_team_player_names = ",".join([player['name'] for player in away_team_players])
+    away_team_names_I = ",".join([player['nameI'] for player in away_team_players])
+
     play_by_play = parse_play_by_play(actions)
     metadata = parse_metadata(data)
     game = {
         "metadata": metadata,
-        "input": play_by_play
+        "input": play_by_play,
+        "home_team_player_names": home_team_player_names,
+        "home_team_names_I": home_team_names_I,
+        "away_team_player_names": away_team_player_names,
+        "away_team_names_I": away_team_names_I
     }
     if get_recaps:
-        recap_as_list = data["props"]["pageProps"]["story"]["content"]
-        recap = parse_recap(recap_as_list)
-        game["output"] = recap
+        if story := page_props["story"]:
+            recap_as_list = story["content"]
+            recap = parse_recap(recap_as_list)
+            game["output"] = recap
     with open(f"data/dataset/{year}/{year}_samples.jsonl", "a") as f:
         f.write(json.dumps(game) + "\n")
         f.flush()
