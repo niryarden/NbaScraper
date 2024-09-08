@@ -1,8 +1,10 @@
 import json
 import urllib.request
-from bs4 import BeautifulSoup
 import threading
 import os
+
+from bs4 import BeautifulSoup
+from tqdm import tqdm
 
 
 REQ_RETRIES = 5
@@ -68,13 +70,29 @@ def parse_recap(recap_as_list):
     return recap
 
 
-def parse_metadata(data):
-    metadata = {}
-    home_team = data["props"]["pageProps"]["game"]["homeTeam"]
-    metadata["homeTeam"] = f"{home_team['teamCity']} {home_team['teamName']}"
-    away_team = data["props"]["pageProps"]["game"]["awayTeam"]
-    metadata["awayTeam"] = f"{away_team['teamCity']} {away_team['teamName']}"
-    metadata["time"] = data["props"]["pageProps"]["game"]["gameEt"]
+def parse_metadata(page_props, game_id):
+    home_team = page_props["game"]["homeTeam"]
+    home_team = f"{home_team['teamCity']} {home_team['teamName']}"
+    away_team = page_props["game"]["awayTeam"]
+    away_team = f"{away_team['teamCity']} {away_team['teamName']}"
+    time = page_props["game"]["gameEt"]
+    home_team_players = page_props["game"]["homeTeamPlayers"]
+    home_team_player_names = ",".join([player['name'] for player in home_team_players])
+    home_team_names_I = ",".join([player['nameI'] for player in home_team_players])
+    away_team_players = page_props["game"]["awayTeamPlayers"]
+    away_team_player_names = ",".join([player['name'] for player in away_team_players])
+    away_team_names_I = ",".join([player['nameI'] for player in away_team_players])
+
+    metadata = {
+        "game_id": game_id,
+        "home_team": home_team,
+        "away_team": away_team,
+        "time": time,
+        "home_team_players_names": home_team_player_names,
+        "home_team_names_I": home_team_names_I,
+        "away_team_players_names": away_team_player_names,
+        "away_team_names_I": away_team_names_I,
+    }
     return metadata
 
 
@@ -86,24 +104,11 @@ def scrape_game(game_id, year, get_recaps):
     data = json.loads(soup.find('script', type='application/json', id="__NEXT_DATA__").text)
     page_props = data["props"]["pageProps"]
     actions = page_props["playByPlay"]["actions"]
-    home_team_players = page_props["game"]["homeTeamPlayers"]
-    home_team_player_names = ",".join([player['name'] for player in home_team_players])
-    home_team_names_I = ",".join([player['nameI'] for player in home_team_players])
-
-    away_team_players = page_props["game"]["awayTeamPlayers"]
-    away_team_player_names = ",".join([player['name'] for player in away_team_players])
-    away_team_names_I = ",".join([player['nameI'] for player in away_team_players])
-
     play_by_play = parse_play_by_play(actions)
-    metadata = parse_metadata(data)
+    metadata = parse_metadata(page_props, game_id)
     game = {
-        "game_id": game_id,
         "metadata": metadata,
         "input": play_by_play,
-        "home_team_player_names": home_team_player_names,
-        "home_team_names_I": home_team_names_I,
-        "away_team_player_names": away_team_player_names,
-        "away_team_names_I": away_team_names_I
     }
     if get_recaps:
         if story := page_props["story"]:
@@ -129,7 +134,7 @@ def scrape_year(year, get_recaps):
     create_dir(f"data/dataset/{year}")
     with open(f"data/game_ids/{year}.txt") as f:
         game_ids = f.read().splitlines()
-    for game_id in game_ids:
+    for game_id in tqdm(game_ids):
         scrape_game(game_id, year, get_recaps)
 
     if os.path.isfile(f"data/dataset/{year}/unsuccessful_game_ids.txt"):
