@@ -97,6 +97,7 @@ def scrape_game(game_id, year, get_recaps):
     play_by_play = parse_play_by_play(actions)
     metadata = parse_metadata(data)
     game = {
+        "game_id": game_id,
         "metadata": metadata,
         "input": play_by_play,
         "home_team_player_names": home_team_player_names,
@@ -109,6 +110,7 @@ def scrape_game(game_id, year, get_recaps):
             recap_as_list = story["content"]
             recap = parse_recap(recap_as_list)
             game["output"] = recap
+
     with open(f"data/dataset/{year}/{year}_samples.jsonl", "a") as f:
         f.write(json.dumps(game) + "\n")
         f.flush()
