@@ -170,3 +170,4 @@ data/game_ids/*
 data/dataset/*
 !data/dataset/.keep
 
+cache/**
