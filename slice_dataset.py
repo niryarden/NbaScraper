@@ -1,5 +1,7 @@
+import json
 import random
 import zipfile
+from tqdm import tqdm
 
 
 def split_supervised():
@@ -31,9 +33,14 @@ def split_supervised():
 
 def gather_unsupervised():
     all_samples = []
-    for year in range(1996, 2019):
+    for year in tqdm(range(1996, 2019)):
         with open(f"data/dataset/{year}/{year}_samples.jsonl", "r") as f:
-            all_samples.extend(f.read().splitlines())
+            lst = f.read().splitlines()
+            as_json = "[" + ",".join(lst) + "]"
+            as_dict = json.loads(as_json)
+            for item in as_dict:
+                item["output"] = ""
+                all_samples.append(json.dumps(item) + "\n")
     random.shuffle(all_samples)
 
     with open(f"data/dataset/to_upload/uncompressed/unsupervised.jsonl", "w") as f:
@@ -43,5 +50,5 @@ def gather_unsupervised():
 
 
 if __name__ == "__main__":
-    split_supervised()
+    # split_supervised()
     gather_unsupervised()
