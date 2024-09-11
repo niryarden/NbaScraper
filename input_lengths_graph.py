@@ -5,14 +5,15 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 
-def split_into_buckets(lst, maximum):
-    bucket_size = 1000
+def split_into_buckets(lengths):
+    bucket_size = 100
+    maximum = (int(max(lengths) / bucket_size)) * bucket_size
     bucket_dict = {}
     for i in range(bucket_size, maximum + 2 * bucket_size, bucket_size):
         bucket_dict[i] = 0
 
-    for num in lst:
-        bucket = (int(num / 1000) + 1) * 1000
+    for num in lengths:
+        bucket = (int(num / bucket_size) + 1) * bucket_size
         bucket_dict[bucket] += 1
 
     return bucket_dict
@@ -25,35 +26,34 @@ def collect_data():
         trust_remote_code=True,
         cache_dir="cache"
     )
-    all_samples = [*dataset["train"], *dataset["test"], *dataset["validation"], *dataset["unsupervised"]]
+    all_samples = [*dataset["train"], *dataset["test"], *dataset["validation"]]
     tokens = []
     for sample in tqdm(all_samples):
         embedded = tokenizer(sample["input"], return_tensors="pt", return_attention_mask=False)
         tokens.append(embedded["input_ids"].size(1))
 
-    print(sum(tokens) / len(tokens))
-    maximum = (int(max(tokens) / 1000)) * 1000
-    bucket_dict = split_into_buckets(tokens, maximum)
-    with open("buckets.json", "w") as f:
-        json.dump(bucket_dict, f)
+    print(f"Average: {sum(tokens) / len(tokens)}")
+    with open("graphs/lengths.json", "w") as f:
+        f.write(json.dumps(tokens))
 
 
 def graph():
-    with open("buckets.json", 'r') as f:
-        data = json.loads(f.read())
-    x = list(data.keys())
-    y = list(data.values())
+    with open("graphs/lengths.json", 'r') as f:
+        lengths = json.loads(f.read())
 
-    plt.bar(x[12:], y[12:])
+    bucket_dict = split_into_buckets(lengths)
+    x = list(bucket_dict.keys())
+    y = list(bucket_dict.values())
+
+    plt.bar(x[140:230], y[140:230], width=80)
     plt.xlabel('Play-by-play length (Tokens)')
     plt.ylabel('Samples')
     plt.title('Play-by-play length distribution')
     plt.xticks(rotation=45, ha='right', fontsize=8)
     plt.tight_layout()
-    # plt.show()
-    plt.savefig('buckets.png')
+    plt.savefig('graphs/input_length.png')
 
 
 if __name__ == "__main__":
-    collect_data()
+    # collect_data()
     graph()
